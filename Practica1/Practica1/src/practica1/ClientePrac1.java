@@ -16,22 +16,22 @@ public class ClientePrac1 {
     
     public static void consultaRepoLocal(){
         
+        //Con el sig segmento de codigo obtenemos la ruta a nuestra carpeta que contiene el repo local
           File f = new File("");
           String ruta = f.getAbsolutePath();
           String carpeta="RepositorioCliente";
           String rutaRepoLocal = ruta+"\\"+carpeta+"\\";
           
-        final File folder = new File(rutaRepoLocal);
+        //Con el sig segmento de codigo obtendremos todos los archivos y directorios del repo local y los imprimiremos
+        File folder = new File(rutaRepoLocal);
         
-        for (final File fileEntry : folder.listFiles()) {
-        if (fileEntry.isDirectory()) {
-            System.out.println("FOLDER CON NOMBRE: " + fileEntry.getName() );
-        } else {
-            System.out.println(fileEntry.getName());
+        for (File fileEntry : folder.listFiles()) {
+            if (fileEntry.isDirectory()) {
+                System.out.println("Directorio: " + fileEntry.getName() );
+            } else {
+                System.out.println("Archivo: " + fileEntry.getName());
+            }
         }
-    }
-
-        
     }
     
     
@@ -41,6 +41,7 @@ public class ClientePrac1 {
     
     public static void subirArchivosCarpetas(){
         
+        //DE MOMENTO ESTO SOLO ENVIA ARCHIVOS AUN NO ENVIA VARIOS ARCHIVOS NI DIRECTORIOS ENTEROS
         try{
             int pto = 8000;
             String dir = "127.0.0.1";
