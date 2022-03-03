@@ -45,6 +45,7 @@ public class ClientePrac1 {
             JFileChooser jf = new JFileChooser();
             //jf.setMultiSelectionEnabled(true);
             int r = jf.showOpenDialog(null);
+            jf.setRequestFocusEnabled(true);
             if (r == JFileChooser.APPROVE_OPTION) {
                 File f = jf.getSelectedFile();
                 String nombre = f.getName();
