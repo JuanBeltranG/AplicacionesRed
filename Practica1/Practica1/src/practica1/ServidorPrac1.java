@@ -4,13 +4,17 @@ import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import static practica1.ClientePrac1.eliminarDirectorios;
 
 public class ServidorPrac1 {
@@ -66,6 +70,106 @@ public class ServidorPrac1 {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+    
+    public static File newFile(File destinationDir, ZipEntry zipEntry) throws IOException {
+        File destFile = new File(destinationDir, zipEntry.getName());
+
+        String destDirPath = destinationDir.getCanonicalPath();
+        String destFilePath = destFile.getCanonicalPath();
+
+        if (!destFilePath.startsWith(destDirPath + File.separator)) {
+            throw new IOException("Entry is outside of the target dir: " + zipEntry.getName());
+        }
+
+        return destFile;
+    }
+    
+    public static void subirCarpetaDeCliente(ServerSocket s){
+        try {
+            
+            System.out.println("Servidor iniciado esperando por archivos..");
+            File f = new File("");
+            String ruta = f.getAbsolutePath();
+            String carpeta = "RepositorioServidor";
+            String ruta_archivos = ruta + "\\" + carpeta + "\\";
+            System.out.println("ruta:" + ruta_archivos);
+            File f2 = new File(ruta_archivos);
+            f2.mkdirs();
+            f2.setWritable(true);
+            for (;;) {
+                Socket cl = s.accept();
+                System.out.println("Cliente conectado desde " + cl.getInetAddress() + ":" + cl.getPort());
+                DataInputStream dis = new DataInputStream(cl.getInputStream());
+                String nombre = dis.readUTF();
+                long tam = dis.readLong();
+                System.out.println("Comienza descarga del archivo " + nombre + " de " + tam + " bytes\n\n");
+                DataOutputStream dos = new DataOutputStream(new FileOutputStream(ruta_archivos + nombre));
+                long recibidos = 0;
+                int l = 0, porcentaje = 0;
+                while (recibidos < tam) {
+                    byte[] b = new byte[1500];
+                    l = dis.read(b);
+                    System.out.println("leidos: " + l);
+                    dos.write(b, 0, l);
+                    dos.flush();
+                    recibidos = recibidos + l;
+                    porcentaje = (int) ((recibidos * 100) / tam);
+                    System.out.print("\rRecibido el " + porcentaje + " % del archivo");
+                }
+                System.out.println("Archivo recibido..");
+                dos.close();
+                dis.close();
+                cl.close();
+
+                //En esta seccion descomprimiremos el archivo zip
+                String fileZip = ruta_archivos + nombre;
+
+                //En las siguientes lineas crearemos la ruta directorio donde se guardara nuestro archivo zip 
+                String destination = ruta_archivos/* + nombre.substring(0, nombre.indexOf(".zip"))*/;
+
+                File destDir = new File(destination);
+                byte[] buffer = new byte[1024];
+                ZipInputStream zis = new ZipInputStream(new FileInputStream(fileZip));
+                ZipEntry zipEntry = zis.getNextEntry();
+
+                while (zipEntry != null) {
+                    File newFile = newFile(destDir, zipEntry);
+                    if (zipEntry.isDirectory()) {
+                        if (!newFile.isDirectory() && !newFile.mkdirs()) {
+                            throw new IOException("Failed to create directory " + newFile);
+                        }
+                    } else {
+                        // fix for Windows-created archives
+                        File parent = newFile.getParentFile();
+                        if (!parent.isDirectory() && !parent.mkdirs()) {
+                            throw new IOException("Failed to create directory " + parent);
+                        }
+
+                        // write file content
+                        FileOutputStream fos = new FileOutputStream(newFile);
+                        int len;
+                        while ((len = zis.read(buffer)) > 0) {
+                            fos.write(buffer, 0, len);
+                        }
+                        fos.close();
+                    }
+                    zipEntry = zis.getNextEntry();
+
+                }
+                zis.closeEntry();
+                zis.close();
+                
+                File borra = new File(ruta_archivos + nombre);
+                borra.delete();
+                
+
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
     }
 
     public static void consultaRepoServidor(String carpeta, ServerSocket s) {
@@ -186,6 +290,10 @@ public class ServidorPrac1 {
                     case "6":
                         eliminarRepoServidor("RepositorioServidor", s1);
                         //System.out.println("Archivo subido con exito");
+                        break;
+                    case "31":
+                        subirCarpetaDeCliente(s1);
+                        //System.out.println("Carpeta subida con exito");
                         break;
 
                     default:

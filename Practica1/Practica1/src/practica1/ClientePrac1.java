@@ -5,12 +5,15 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import javax.swing.JFileChooser;
 
 public class ClientePrac1 {
@@ -154,6 +157,44 @@ public class ClientePrac1 {
             e.printStackTrace();
         }
     }
+    
+    
+    public static void menuSubirArchivos() throws IOException{
+        
+        int option = 0;
+        while(option != 3){
+            System.out.println("");
+            
+            System.out.println("-----------------------------------------------------------------------------------");
+            System.out.println("1.- Subir archivos");
+            System.out.println("2.- Subir carpetas");
+            System.out.println("3.- Salir al menu principal");
+            System.out.println("Introduce el numero de la opcion a realizar: \n");
+            
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            String op = reader.readLine();
+            option = Integer.parseInt(op);
+            
+            switch (option) {
+                case 1:
+                    sMenuServidor(3);
+                    subirArchivosCarpetas();
+                    break;
+                case 2:
+                    sMenuServidor(31);
+                    subirCarpetas();
+                    break;
+                case 3:
+                    
+                    break;
+                default:
+                    System.out.println("Operación no reconocida, por favor intentelo de nuevo");
+                    break;
+            }
+            
+        }
+        
+    }
 
     public static void subirArchivosCarpetas() {
         try {
@@ -212,6 +253,122 @@ public class ClientePrac1 {
 
         }
 
+    }
+    
+    public static void agregarArchivo(String ruta, String directorio, ZipOutputStream zip) throws Exception{
+        
+        File archivo = new File(directorio);
+        if(archivo.isDirectory()){
+            agregarCarpeta(ruta, directorio, zip);
+        }else{
+            byte[] buffer = new byte[4096];
+            int leido;
+            FileInputStream entrada = new FileInputStream(archivo);
+            zip.putNextEntry(new ZipEntry(ruta + "/" +archivo.getName()));
+            while((leido = entrada.read(buffer)) > 0){
+                zip.write(buffer,0, leido);
+                
+            }
+            
+        }
+    }
+    
+    public static void agregarCarpeta(String ruta, String carpeta, ZipOutputStream zip) throws Exception{
+        File directorio = new File(carpeta);
+        for(String nombreArchivo: directorio.list()){
+            if(ruta.equals("")){
+                agregarArchivo(directorio.getName(), carpeta + "/" + nombreArchivo, zip);
+            }else{
+                agregarArchivo(ruta + "/" + directorio.getName(), carpeta + "/" + nombreArchivo, zip);
+            }
+            
+        }
+        
+    }
+    
+    
+    public static void comprimir(String archivo, String archivoZIP) throws Exception{
+        ZipOutputStream zip = new ZipOutputStream(new FileOutputStream(archivoZIP));
+        agregarCarpeta("",archivo,zip);
+        zip.flush();
+        zip.close();
+        
+    }
+    
+    public static void subirCarpetas(){
+        try {
+            int pto = 8000;
+            String dir = "127.0.0.1";
+            Socket cl = new Socket(dir, pto);
+            System.out.println("Conexion con servidor establecida.. lanzando FileChooser..");
+
+            JFileChooser chooser;
+            String choosertitle = new String();
+
+            chooser = new JFileChooser();
+            chooser.setCurrentDirectory(new java.io.File("."));
+            chooser.setDialogTitle(choosertitle);
+            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+
+            chooser.setAcceptAllFileFilterUsed(false);
+            int r = chooser.showOpenDialog(null);
+
+            String destino = "";
+            String carPadre ="";
+            //El chooser.getSelected file es el que hara referencia a la carpeta que subiremos
+            if (r == JFileChooser.APPROVE_OPTION) {
+                System.out.println("getCurrentDirectory(): "
+                        + chooser.getCurrentDirectory());
+                System.out.println("getSelectedFile() : "
+                        + chooser.getSelectedFile());
+                
+                destino = chooser.getSelectedFile() + "";
+                destino = destino.replaceAll("\\\\","\\\\\\\\");
+                carPadre = destino;
+                destino += ".zip";
+                       
+            } else {
+                System.out.println("No Selection ");
+            }
+            
+            comprimir(carPadre, destino);
+            
+            //Para este momento ya se creo el archivo zip cuya ruta esta en la variable destino
+            File f = new File(destino);
+            
+            String nombre = f.getName();
+                String path = f.getAbsolutePath();
+                long tam = f.length();
+                System.out.println("Preparandose pare enviar archivo " + path + " de " + tam + " bytes\n\n");
+                DataOutputStream dos = new DataOutputStream(cl.getOutputStream());
+                DataInputStream dis = new DataInputStream(new FileInputStream(path));
+                dos.writeUTF(nombre);
+                dos.flush();
+                dos.writeLong(tam);
+                dos.flush();
+                long enviados = 0;
+                int l = 0, porcentaje = 0;
+                while (enviados < tam) {
+                    byte[] b = new byte[1500];
+                    l = dis.read(b);
+                    System.out.println("enviados: " + l);
+                    dos.write(b, 0, l);
+                    dos.flush();
+                    enviados = enviados + l;
+                    porcentaje = (int) ((enviados * 100) / tam);
+                    System.out.print("\rEnviado el " + porcentaje + " % del archivo");
+                }//while
+                System.out.println("\nArchivo enviado..");
+                dis.close();
+                dos.close();
+                cl.close();
+            
+            //borramos el archivo .zip que generamos para enviar al servidor
+            f.delete();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public static void sMenuServidor(int opcionM) {
@@ -274,7 +431,7 @@ public class ClientePrac1 {
                     break;
                 case 3:
                     sMenuServidor(option);
-                    subirArchivosCarpetas();
+                    menuSubirArchivos();
                     break;
                 case 4:
 
