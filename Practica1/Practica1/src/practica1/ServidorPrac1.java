@@ -34,7 +34,7 @@ public class ServidorPrac1 {
             System.out.println("Numero de archivos seleccionados recibidos "+ numArchivos);
             disS.close();
             cliente1.close();
-            /*
+            
             for (int i = 0; i < numArchivos; i++) {
                 Socket clienteArchivos = s.accept();
                 System.out.println("Cliente conectado desde " + clienteArchivos.getInetAddress() + ":" + cliente1.getPort());
@@ -62,7 +62,7 @@ public class ServidorPrac1 {
                 clienteArchivos.close();
                 
             }
-            */
+            
 
         } catch (Exception e) {
             e.printStackTrace();
