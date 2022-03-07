@@ -24,7 +24,7 @@ public class ClientePrac1 {
 
         //Con el sig segmento de codigo obtendremos todos los archivos y directorios del repo local y los imprimiremos
         File folder = new File(rutaRepoLocal);
-
+        System.out.println("\n Archivos en el repositorio local del cliente\n");
         for (File fileEntry : folder.listFiles()) {
             if (fileEntry.isDirectory()) {
                 System.out.println("Directorio: " + fileEntry.getName());
@@ -39,13 +39,15 @@ public class ClientePrac1 {
             int pto = 8000;
             String dir = "127.0.0.1";
             Socket cl = new Socket(dir, pto);
-            System.out.println("Conexion con el servidor " + dir + ":" + pto + " establecida para consultar repo Servidor");
+            //System.out.println("Conexion con el servidor " + dir + ":" + pto + " establecida para consultar repo Servidor");
             BufferedReader br1 = new BufferedReader(new InputStreamReader(cl.getInputStream(), "ISO-8859-1"));
             String eco = "";
-            System.out.println("Archivos recibidos");
+            System.out.println("\n Archivos en el repositorio del servidor\n");
             while (!eco.equals("archivos enviados")) {
                 eco = br1.readLine();
-                System.out.println(eco);
+                if (!(eco.equals("archivos enviados"))) {
+                    System.out.println(eco);
+                }
             }//while
             //Cerramos el socket una vez enviada la opcion
             br1.close();
@@ -65,34 +67,88 @@ public class ClientePrac1 {
     }
 
     public static void eliminarArchivoRepoLocal(String carpeta) {
-
-        //Con el sig segmento de codigo obtenemos la ruta a nuestra carpeta que contiene el repo local
-        File f = new File("");
-        String ruta = f.getAbsolutePath();
-        String rutaRepoLocal = ruta + "\\" + carpeta + "\\";
-        int option;
-        //Con el sig segmento de codigo obtendremos todos los archivos y directorios del repo local y los imprimiremos
-        File folder = new File(rutaRepoLocal);
-        ArrayList<String> archivos = new ArrayList<String>();
-        int i = 0;
-        for (File fileEntry : folder.listFiles()) {
-            archivos.add(fileEntry.getName());
-            System.out.println("[" + i + "]" + archivos.get(i));
-            i++;
-        }
         try {
-            System.out.println("Escribe el numero del archivo que quieras eliminar");
-            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-            String op = reader.readLine();
-            option = Integer.parseInt(op);
-            File rf = new File(rutaRepoLocal + (archivos.get(option)));
-            if (rf.isDirectory()) {
-                eliminarDirectorios(rf);
-            } else {
-                rf.delete();
-            }
-            archivos.remove(option);
-            System.out.println("Archivo eliminado");
+            String op = "";
+            do {
+                //Con el sig segmento de codigo obtenemos la ruta a nuestra carpeta que contiene el repo local
+                File f = new File("");
+                String ruta = f.getAbsolutePath();
+                String rutaRepoLocal = ruta + "\\" + carpeta + "\\";
+                int option;
+                //Con el sig segmento de codigo obtendremos todos los archivos y directorios del repo local y los imprimiremos
+                File folder = new File(rutaRepoLocal);
+                ArrayList<String> archivos = new ArrayList<String>();
+                int i = 0;
+                for (File fileEntry : folder.listFiles()) {
+                    archivos.add(fileEntry.getName());
+                    System.out.println("[" + i + "]" + archivos.get(i));
+                    i++;
+                }
+
+                System.out.println("Escribe el numero del archivo que quieras eliminar");
+                BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+                op = reader.readLine();
+                option = Integer.parseInt(op);
+                File rf = new File(rutaRepoLocal + (archivos.get(option)));
+                if (rf.isDirectory()) {
+                    eliminarDirectorios(rf);
+                    rf.delete();
+                } else {
+                    rf.delete();
+                }
+                archivos.remove(option);
+                System.out.println("Archivo eliminado");
+                System.out.println("Quieres eliminar otro elemento?  (S/N)");
+                op = reader.readLine();
+            } while (op.compareToIgnoreCase("s") == 0);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void elimanarArchivoRepoServidor() {
+        try {
+            String op = "";
+            do {
+                int pto = 8000;
+                String dir = "127.0.0.1";
+                Socket cl = new Socket(dir, pto);
+                BufferedReader br1 = new BufferedReader(new InputStreamReader(cl.getInputStream(), "ISO-8859-1"));
+                String eco = "";
+                System.out.println("\n Archivos en el repositorio del Servidor\n");
+                ArrayList<String> archivos = new ArrayList<String>();
+                int posicionA = 0;
+                while (!eco.equals("archivos enviados")) {
+                    eco = br1.readLine();
+                    if (!(eco.equals("archivos enviados"))) {
+                        archivos.add(eco);
+                        System.out.println("[" + posicionA + "]" + archivos.get(posicionA));
+                        posicionA++;
+                    }//while
+                }
+                //Cerramos el socket una vez enviada la opcion
+                br1.close();
+                cl.close();
+
+                System.out.println("Escribe el numero del archivo que quieras eliminar");
+                BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+                op = reader.readLine();
+                Socket c2 = new Socket(dir, pto);
+                PrintWriter pw = new PrintWriter(new OutputStreamWriter(c2.getOutputStream(), "ISO-8859-1"));
+                pw.println(op);
+                pw.flush();
+                pw.close();
+                c2.close();
+                System.out.println("Quieres eliminar otro elemento?  (S/N)");
+                op = reader.readLine();
+                Socket c3 = new Socket(dir, pto);
+                PrintWriter pw2 = new PrintWriter(new OutputStreamWriter(c3.getOutputStream(), "ISO-8859-1"));
+                pw2.println(op);
+                pw2.flush();
+                pw2.close();
+                c3.close();
+            } while (op.compareToIgnoreCase("s") == 0);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -100,8 +156,6 @@ public class ClientePrac1 {
     }
 
     public static void subirArchivosCarpetas() {
-
-        //DE MOMENTO ESTO SOLO ENVIA ARCHIVOS AUN NO ENVIA VARIOS ARCHIVOS NI DIRECTORIOS ENTEROS
         try {
             int pto = 8000;
             String dir = "127.0.0.1";
@@ -122,7 +176,7 @@ public class ClientePrac1 {
             dos.close();
             c1.close();
             System.out.println("Numero de archivos seleccionados " + sizeArreglo + " han enviados");
-            
+
             for (int i = 0; i < sizeArreglo; i++) {
                 Socket clienteArchivos = new Socket(dir, pto);
                 long tam = f[i].length();
@@ -149,20 +203,10 @@ public class ClientePrac1 {
                     }
                 }
                 System.out.println("\nArchivo enviado..");
-                //pw.close();
                 dosC.close();
                 disC.close();
                 clienteArchivos.close();
             }
-            
-            //PrintWriter pw = new PrintWriter(new OutputStreamWriter(c1.getOutputStream(), "ISO-8859-1"));
-            //String numeroArchivos = "" + sizeArreglo;
-            //pw.println(numeroArchivos);
-            //pw.flush();
-
-            //dos = new DataOutputStream(c1.getOutputStream());
-            //.writeInt(sizeArreglo);
-            //dos.flush();
         } catch (Exception e) {
             e.printStackTrace();
 
@@ -175,7 +219,7 @@ public class ClientePrac1 {
             int pto = 8000;
             String dir = "127.0.0.1";
             Socket cl = new Socket(dir, pto);
-            System.out.println("Conexion con el servidor " + dir + ":" + pto + " establecida para el menu");
+            //System.out.println("Conexion con el servidor " + dir + ":" + pto + " establecida para el menu");
             PrintWriter pw = new PrintWriter(new OutputStreamWriter(cl.getOutputStream(), "ISO-8859-1"));
             BufferedReader br1 = new BufferedReader(new InputStreamReader(cl.getInputStream(), "ISO-8859-1"));
             String eco = "";
@@ -183,8 +227,8 @@ public class ClientePrac1 {
             pw.println(mensaje);
             pw.flush();
             eco = br1.readLine();
-            System.out.println("Eco recibido desde " + cl.getInetAddress() + ":" + cl.getPort() + " " + eco + "\n");
-//Cerramos el socket una vez enviada la opcion
+            //System.out.println("Eco recibido desde " + cl.getInetAddress() + ":" + cl.getPort() + " " + eco + "\n");
+            //Cerramos el socket una vez enviada la opcion
             br1.close();
             br1.close();
             pw.close();
@@ -199,7 +243,7 @@ public class ClientePrac1 {
         //Comenzaremos mostrando el menu de las opciones disponibles para el usuario
         int option = 0;
         while (option != 8) {
-
+            System.out.println("");
             System.out.println("BIENVENIDO A TU REPOSITORIO DE ARCHIVOS");
             System.out.println("Estas son las operaciones disponibles");
             System.out.println("-----------------------------------------------------------------------------------");
@@ -218,6 +262,7 @@ public class ClientePrac1 {
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             String op = reader.readLine();
             option = Integer.parseInt(op);
+            System.out.println("-----------------------------------------------------------------------------------");
 
             switch (option) {
                 case 1:
@@ -232,11 +277,14 @@ public class ClientePrac1 {
                     subirArchivosCarpetas();
                     break;
                 case 4:
-                    eliminarArchivoRepoLocal("RepositorioCliente");
+
                     break;
                 case 5:
+                    eliminarArchivoRepoLocal("RepositorioCliente");
                     break;
                 case 6:
+                    sMenuServidor(option);
+                    elimanarArchivoRepoServidor();
                     break;
                 case 7:
                     break;
