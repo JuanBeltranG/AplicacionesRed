@@ -109,12 +109,8 @@ public class ClientePrac1 {
             JFileChooser jf = new JFileChooser();
             jf.setMultiSelectionEnabled(true);
             int r = jf.showOpenDialog(null);
-<<<<<<< HEAD
-            jf.setRequestFocusEnabled(true);
-=======
             File[] f = null;
             System.out.println("lanzando FileChooser..");
->>>>>>> 4bda68184aca2740381819fb1abcb49eafcec35c
             if (r == JFileChooser.APPROVE_OPTION) {
                 f = jf.getSelectedFiles();
                 sizeArreglo = f.length;
