@@ -10,16 +10,16 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
 import javax.swing.JFileChooser;
 
 public class ClientePrac1 {
 
-    public static void consultaRepoLocal() {
+    public static void consultaRepoLocal(String carpeta) {
 
         //Con el sig segmento de codigo obtenemos la ruta a nuestra carpeta que contiene el repo local
         File f = new File("");
         String ruta = f.getAbsolutePath();
-        String carpeta = "RepositorioCliente";
         String rutaRepoLocal = ruta + "\\" + carpeta + "\\";
 
         //Con el sig segmento de codigo obtendremos todos los archivos y directorios del repo local y los imprimiremos
@@ -34,47 +34,135 @@ public class ClientePrac1 {
         }
     }
 
+    public static void consultaRepoServidor() {
+        try {
+            int pto = 8000;
+            String dir = "127.0.0.1";
+            Socket cl = new Socket(dir, pto);
+            System.out.println("Conexion con el servidor " + dir + ":" + pto + " establecida para consultar repo Servidor");
+            BufferedReader br1 = new BufferedReader(new InputStreamReader(cl.getInputStream(), "ISO-8859-1"));
+            String eco = "";
+            System.out.println("Archivos recibidos");
+            while (!eco.equals("archivos enviados")) {
+                eco = br1.readLine();
+                System.out.println(eco);
+            }//while
+            //Cerramos el socket una vez enviada la opcion
+            br1.close();
+            cl.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void eliminarDirectorios(File directorio) {
+        for (File fileEntry : directorio.listFiles()) {
+            if (fileEntry.isDirectory()) {
+                eliminarDirectorios(fileEntry);
+            }
+            fileEntry.delete();
+        }
+    }
+
+    public static void eliminarArchivoRepoLocal(String carpeta) {
+
+        //Con el sig segmento de codigo obtenemos la ruta a nuestra carpeta que contiene el repo local
+        File f = new File("");
+        String ruta = f.getAbsolutePath();
+        String rutaRepoLocal = ruta + "\\" + carpeta + "\\";
+        int option;
+        //Con el sig segmento de codigo obtendremos todos los archivos y directorios del repo local y los imprimiremos
+        File folder = new File(rutaRepoLocal);
+        ArrayList<String> archivos = new ArrayList<String>();
+        int i = 0;
+        for (File fileEntry : folder.listFiles()) {
+            archivos.add(fileEntry.getName());
+            System.out.println("[" + i + "]" + archivos.get(i));
+            i++;
+        }
+        try {
+            System.out.println("Escribe el numero del archivo que quieras eliminar");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            String op = reader.readLine();
+            option = Integer.parseInt(op);
+            File rf = new File(rutaRepoLocal + (archivos.get(option)));
+            if (rf.isDirectory()) {
+                eliminarDirectorios(rf);
+            } else {
+                rf.delete();
+            }
+            archivos.remove(option);
+            System.out.println("Archivo eliminado");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public static void subirArchivosCarpetas() {
 
         //DE MOMENTO ESTO SOLO ENVIA ARCHIVOS AUN NO ENVIA VARIOS ARCHIVOS NI DIRECTORIOS ENTEROS
         try {
             int pto = 8000;
             String dir = "127.0.0.1";
-            Socket cl = new Socket(dir, pto);
-            System.out.println("Conexion con servidor establecida.. lanzando FileChooser..");
+            int sizeArreglo = 0;
             JFileChooser jf = new JFileChooser();
-            //jf.setMultiSelectionEnabled(true);
+            jf.setMultiSelectionEnabled(true);
             int r = jf.showOpenDialog(null);
+            File[] f = null;
+            System.out.println("lanzando FileChooser..");
             if (r == JFileChooser.APPROVE_OPTION) {
-                File f = jf.getSelectedFile();
-                String nombre = f.getName();
-                String path = f.getAbsolutePath();
-                long tam = f.length();
+                f = jf.getSelectedFiles();
+                sizeArreglo = f.length;
+            }
+            Socket c1 = new Socket(dir, pto);
+            DataOutputStream dos = new DataOutputStream(c1.getOutputStream());
+            dos.write(sizeArreglo);
+            dos.flush();
+            dos.close();
+            c1.close();
+            System.out.println("Numero de archivos seleccionados " + sizeArreglo + " han enviados");
+            /*
+            for (int i = 0; i < sizeArreglo; i++) {
+                Socket clienteArchivos = new Socket(dir, pto);
+                long tam = f[i].length();
+                String nombre = f[i].getName();
+                String path = f[i].getAbsolutePath();
                 System.out.println("Preparandose pare enviar archivo " + path + " de " + tam + " bytes\n\n");
-                DataOutputStream dos = new DataOutputStream(cl.getOutputStream());
-                DataInputStream dis = new DataInputStream(new FileInputStream(path));
-                dos.writeUTF(nombre);
-                dos.flush();
-                dos.writeLong(tam);
-                dos.flush();
+                DataOutputStream dosC = new DataOutputStream(clienteArchivos.getOutputStream());
+                DataInputStream disC = new DataInputStream(new FileInputStream(path));
+                dosC.writeUTF(nombre);
+                dosC.flush();
+                dosC.writeLong(tam);
+                dosC.flush();
                 long enviados = 0;
                 int l = 0, porcentaje = 0;
                 while (enviados < tam) {
                     byte[] b = new byte[1500];
-                    l = dis.read(b);
-                    System.out.println("enviados: " + l);
-                    dos.write(b, 0, l);
-                    dos.flush();
+                    l = disC.read(b);
+                    dosC.write(b, 0, l);
+                    dosC.flush();
                     enviados = enviados + l;
                     porcentaje = (int) ((enviados * 100) / tam);
-                    System.out.print("\rEnviado el " + porcentaje + " % del archivo");
-                }//while
+                    if (porcentaje % 10 == 0) {
+                        System.out.print("\rEnviado el " + porcentaje + " % del archivo");
+                    }
+                }
                 System.out.println("\nArchivo enviado..");
-                dis.close();
-                dos.close();
-                cl.close();
+                //pw.close();
+                dosC.close();
+                disC.close();
+                clienteArchivos.close();
             }
+            */
+            //PrintWriter pw = new PrintWriter(new OutputStreamWriter(c1.getOutputStream(), "ISO-8859-1"));
+            //String numeroArchivos = "" + sizeArreglo;
+            //pw.println(numeroArchivos);
+            //pw.flush();
 
+            //dos = new DataOutputStream(c1.getOutputStream());
+            //.writeInt(sizeArreglo);
+            //dos.flush();
         } catch (Exception e) {
             e.printStackTrace();
 
@@ -91,14 +179,11 @@ public class ClientePrac1 {
             PrintWriter pw = new PrintWriter(new OutputStreamWriter(cl.getOutputStream(), "ISO-8859-1"));
             BufferedReader br1 = new BufferedReader(new InputStreamReader(cl.getInputStream(), "ISO-8859-1"));
             String eco = "";
-            while (!eco.equals("opcionRecibida")) {
-                String mensaje = String.valueOf(opcionM);
-                pw.println(mensaje);
-                pw.flush();
-                eco = br1.readLine();
-                System.out.println("Eco recibido desde " + cl.getInetAddress() + ":" + cl.getPort() + " " + eco + "\n");
-
-            }//while
+            String mensaje = String.valueOf(opcionM);
+            pw.println(mensaje);
+            pw.flush();
+            eco = br1.readLine();
+            System.out.println("Eco recibido desde " + cl.getInetAddress() + ":" + cl.getPort() + " " + eco + "\n");
 //Cerramos el socket una vez enviada la opcion
             br1.close();
             br1.close();
@@ -136,16 +221,18 @@ public class ClientePrac1 {
 
             switch (option) {
                 case 1:
-                    consultaRepoLocal();
+                    consultaRepoLocal("RepositorioCliente");
                     break;
                 case 2:
                     sMenuServidor(option);
+                    consultaRepoServidor();
                     break;
                 case 3:
                     sMenuServidor(option);
                     subirArchivosCarpetas();
                     break;
                 case 4:
+                    eliminarArchivoRepoLocal("RepositorioCliente");
                     break;
                 case 5:
                     break;
