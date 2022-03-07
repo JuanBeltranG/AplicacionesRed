@@ -10,12 +10,12 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import static practica1.ClientePrac1.consultaRepoLocal;
 
 public class ServidorPrac1 {
 
-    public static void subirArchivo(ServerSocket s,Socket cliente) {
+    public static void subirArchivoDeCliente(ServerSocket s) {
         try {
-            s.setReuseAddress(true);
             System.out.println("Servidor iniciado esperando por archivos..");
             File f = new File("");
             String ruta = f.getAbsolutePath();
@@ -25,10 +25,20 @@ public class ServidorPrac1 {
             File f2 = new File(ruta_archivos);
             f2.mkdirs();
             f2.setWritable(true);
-            for (;;) {
-                cliente = s.accept();
-                System.out.println("Cliente conectado desde " + cliente.getInetAddress() + ":" + cliente.getPort());
-                DataInputStream dis = new DataInputStream(cliente.getInputStream());
+            //Inicializamos el servidor
+
+            Socket cliente1 = s.accept();
+            System.out.println("Cliente conectado desde " + cliente1.getInetAddress() + ":" + cliente1.getPort());
+            DataInputStream disS = new DataInputStream(cliente1.getInputStream());
+            int numArchivos = disS.readInt();
+            System.out.println("Numero de archivos seleccionados recibidos "+ numArchivos);
+            disS.close();
+            cliente1.close();
+            /*
+            for (int i = 0; i < numArchivos; i++) {
+                Socket clienteArchivos = s.accept();
+                System.out.println("Cliente conectado desde " + clienteArchivos.getInetAddress() + ":" + cliente1.getPort());
+                DataInputStream dis = new DataInputStream(clienteArchivos.getInputStream());
                 String nombre = dis.readUTF();
                 long tam = dis.readLong();
                 System.out.println("Comienza descarga del archivo " + nombre + " de " + tam + " bytes\n\n");
@@ -38,20 +48,60 @@ public class ServidorPrac1 {
                 while (recibidos < tam) {
                     byte[] b = new byte[1500];
                     l = dis.read(b);
-                    System.out.println("leidos: " + l);
                     dos.write(b, 0, l);
                     dos.flush();
                     recibidos = recibidos + l;
                     porcentaje = (int) ((recibidos * 100) / tam);
-                    System.out.println("\rRecibido el " + porcentaje + " % del archivo");
+                    if (porcentaje % 10 == 0) {
+                        System.out.println("\rRecibido el " + porcentaje + " % del archivo");
+                    }
                 }
                 System.out.println("Archivo recibido..");
-                dos.close();
                 dis.close();
+                dos.close();
+                clienteArchivos.close();
+                
             }
+            */
+
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static void consultaLocalRepoServidor(String carpeta, ServerSocket s) {
+
+        //Con el sig segmento de codigo obtenemos la ruta a nuestra carpeta que contiene el repo local
+        File f = new File("");
+        String ruta = f.getAbsolutePath();
+        String rutaRepoLocal = ruta + "\\" + carpeta + "\\";
+        String mensaje = "";
+        //Con el sig segmento de codigo obtendremos todos los archivos y directorios del repo local y los imprimiremos
+        File folder = new File(rutaRepoLocal);
+        try {
+            Socket c1 = s.accept();
+            System.out.println("Cliente conectado desde " + c1.getInetAddress() + ":" + c1.getPort());
+            PrintWriter pw = new PrintWriter(new OutputStreamWriter(c1.getOutputStream(), "ISO-8859-1"));
+            for (File fileEntry : folder.listFiles()) {
+                if (fileEntry.isDirectory()) {
+                    mensaje = "Directorio:" + fileEntry.getName();
+                } else {
+                    mensaje = "Archivo:" + fileEntry.getName();
+                }
+                pw.println(mensaje);
+                pw.flush();
+
+            }
+            mensaje = "archivos enviados";
+            pw.println(mensaje);
+            pw.flush();
+            pw.close();
+            c1.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     public static void main(String[] args) {
@@ -72,28 +122,24 @@ public class ServidorPrac1 {
                 msj = "opcionRecibida";
                 pw.println(msj);
                 pw.flush();
+                br.close();
+                pw.close();
+                c1.close();
+                System.out.println("se cierra el socket c1 Main");
                 switch (option) {
-                    case "3":
-                        subirArchivo(s1,c1);
-                        System.out.println("Archivo subido con exito");
-                        break;
                     case "2":
-
+                        consultaLocalRepoServidor("RepositorioServidor", s1);
                         System.out.println("Explorar servidor");
                         break;
+                    case "3":
+                        subirArchivoDeCliente(s1);
+                        System.out.println("Archivo subido con exito");
+                        break;
+
                     default:
                         System.out.println("Operación no reconocida, por favor intentelo de nuevo");
                         break;
                 }
-
-                /*
-                System.out.println("Cliente cierra conexion");
-                br.close();
-                pw.close();
-                break;
-                 */
-                c1.close();
-                System.out.println("se cierra el socket c1");
             }//for
 
         } catch (Exception e) {
