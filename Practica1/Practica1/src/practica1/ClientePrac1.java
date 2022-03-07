@@ -117,12 +117,12 @@ public class ClientePrac1 {
             }
             Socket c1 = new Socket(dir, pto);
             DataOutputStream dos = new DataOutputStream(c1.getOutputStream());
-            dos.write(sizeArreglo);
+            dos.writeInt(sizeArreglo);
             dos.flush();
             dos.close();
             c1.close();
             System.out.println("Numero de archivos seleccionados " + sizeArreglo + " han enviados");
-            /*
+            
             for (int i = 0; i < sizeArreglo; i++) {
                 Socket clienteArchivos = new Socket(dir, pto);
                 long tam = f[i].length();
@@ -154,7 +154,7 @@ public class ClientePrac1 {
                 disC.close();
                 clienteArchivos.close();
             }
-            */
+            
             //PrintWriter pw = new PrintWriter(new OutputStreamWriter(c1.getOutputStream(), "ISO-8859-1"));
             //String numeroArchivos = "" + sizeArreglo;
             //pw.println(numeroArchivos);
