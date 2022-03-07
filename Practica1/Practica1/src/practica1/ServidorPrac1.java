@@ -10,7 +10,8 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import static practica1.ClientePrac1.consultaRepoLocal;
+import java.util.ArrayList;
+import static practica1.ClientePrac1.eliminarDirectorios;
 
 public class ServidorPrac1 {
 
@@ -25,19 +26,18 @@ public class ServidorPrac1 {
             File f2 = new File(ruta_archivos);
             f2.mkdirs();
             f2.setWritable(true);
-            //Inicializamos el servidor
-
+            //Inicializamos el servidor para saber el numero de archivos a recibir
             Socket cliente1 = s.accept();
-            System.out.println("Cliente conectado desde " + cliente1.getInetAddress() + ":" + cliente1.getPort());
+            //System.out.println("Cliente conectado desde " + cliente1.getInetAddress() + ":" + cliente1.getPort());
             DataInputStream disS = new DataInputStream(cliente1.getInputStream());
             int numArchivos = disS.readInt();
-            System.out.println("Numero de archivos seleccionados recibidos "+ numArchivos);
+            System.out.println("Numero de archivos seleccionados recibidos " + numArchivos);
             disS.close();
             cliente1.close();
-            
+            //for para recibir los archivos
             for (int i = 0; i < numArchivos; i++) {
                 Socket clienteArchivos = s.accept();
-                System.out.println("Cliente conectado desde " + clienteArchivos.getInetAddress() + ":" + cliente1.getPort());
+                //System.out.println("Cliente conectado desde " + clienteArchivos.getInetAddress() + ":" + cliente1.getPort());
                 DataInputStream dis = new DataInputStream(clienteArchivos.getInputStream());
                 String nombre = dis.readUTF();
                 long tam = dis.readLong();
@@ -60,16 +60,15 @@ public class ServidorPrac1 {
                 dis.close();
                 dos.close();
                 clienteArchivos.close();
-                
+
             }
-            
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public static void consultaLocalRepoServidor(String carpeta, ServerSocket s) {
+    public static void consultaRepoServidor(String carpeta, ServerSocket s) {
 
         //Con el sig segmento de codigo obtenemos la ruta a nuestra carpeta que contiene el repo local
         File f = new File("");
@@ -80,7 +79,7 @@ public class ServidorPrac1 {
         File folder = new File(rutaRepoLocal);
         try {
             Socket c1 = s.accept();
-            System.out.println("Cliente conectado desde " + c1.getInetAddress() + ":" + c1.getPort());
+            //System.out.println("Cliente conectado desde " + c1.getInetAddress() + ":" + c1.getPort());
             PrintWriter pw = new PrintWriter(new OutputStreamWriter(c1.getOutputStream(), "ISO-8859-1"));
             for (File fileEntry : folder.listFiles()) {
                 if (fileEntry.isDirectory()) {
@@ -104,6 +103,55 @@ public class ServidorPrac1 {
 
     }
 
+    public static void eliminarRepoServidor(String carpeta, ServerSocket s) {
+
+        try {
+            String op = "";
+            do {
+                consultaRepoServidor(carpeta, s);
+                int pto = 8000;
+                String dir = "127.0.0.1";
+                Socket cl = s.accept();
+                //System.out.println("Conexion con el servidor " + dir + ":" + pto + " establecida para consultar repo Servidor");
+                BufferedReader br1 = new BufferedReader(new InputStreamReader(cl.getInputStream(), "ISO-8859-1"));
+                String archivoE = "";
+                archivoE = br1.readLine();
+                //Cerramos el socket una vez enviada la opcion
+                br1.close();
+                cl.close();
+                File f = new File("");
+                String ruta = f.getAbsolutePath();
+                String rutaRepoLocal = ruta + "\\" + carpeta + "\\";
+                int option = Integer.parseInt(archivoE);
+                //Con el sig segmento de codigo obtendremos todos los archivos y directorios del repo local y los imprimiremos
+                File folder = new File(rutaRepoLocal);
+                ArrayList<String> archivos = new ArrayList<String>();
+                for (File fileEntry : folder.listFiles()) {
+                    archivos.add(fileEntry.getName());
+                }
+                File rf = new File(rutaRepoLocal + (archivos.get(option)));
+                if (rf.isDirectory()) {
+                    eliminarDirectorios(rf);
+                    rf.delete();
+                } else {
+                    rf.delete();
+                }
+                archivos.remove(option);
+                System.out.println("Archivo eliminado");
+                Socket c2 = s.accept();
+                //System.out.println("Conexion con el servidor " + dir + ":" + pto + " establecida para consultar repo Servidor");
+                BufferedReader br2 = new BufferedReader(new InputStreamReader(c2.getInputStream(), "ISO-8859-1"));
+                op = br2.readLine();
+                //Cerramos el socket una vez enviada la opcion
+                br2.close();
+                c2.close();
+            } while (op.compareToIgnoreCase("s") == 0);
+
+        } catch (Exception e) {
+        }
+
+    }
+
     public static void main(String[] args) {
         try {
 
@@ -112,7 +160,7 @@ public class ServidorPrac1 {
             System.out.println("Servidor iniciado en el puerto " + pto1 + " .. esperando cliente..");
             for (;;) {
                 Socket c1 = s1.accept();
-                System.out.println("Cliente conectado desde " + c1.getInetAddress() + ":" + c1.getPort());
+                //System.out.println("Cliente conectado desde " + c1.getInetAddress() + ":" + c1.getPort());
                 PrintWriter pw = new PrintWriter(new OutputStreamWriter(c1.getOutputStream(), "ISO-8859-1"));
                 BufferedReader br = new BufferedReader(new InputStreamReader(c1.getInputStream(), "ISO-8859-1"));
 
@@ -128,12 +176,16 @@ public class ServidorPrac1 {
                 System.out.println("se cierra el socket c1 Main");
                 switch (option) {
                     case "2":
-                        consultaLocalRepoServidor("RepositorioServidor", s1);
-                        System.out.println("Explorar servidor");
+                        consultaRepoServidor("RepositorioServidor", s1);
+                        //System.out.println("Explorar servidor");
                         break;
                     case "3":
                         subirArchivoDeCliente(s1);
-                        System.out.println("Archivo subido con exito");
+                        //System.out.println("Archivo subido con exito");
+                        break;
+                    case "6":
+                        eliminarRepoServidor("RepositorioServidor", s1);
+                        //System.out.println("Archivo subido con exito");
                         break;
 
                     default:
