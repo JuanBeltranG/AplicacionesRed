@@ -13,7 +13,59 @@ import java.net.Socket;
 import java.util.ArrayList;
 import static practica1.ClientePrac1.eliminarDirectorios;
 
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
+
 public class ServidorPrac1 {
+    
+    public static void agregarArchivo(String ruta, String directorio, ZipOutputStream zip) throws Exception{
+        
+        File archivo = new File(directorio);
+        if(archivo.isDirectory()){
+            agregarCarpeta(ruta, directorio, zip);
+        }else{
+            byte[] buffer = new byte[4096];
+            int leido;
+            FileInputStream entrada = new FileInputStream(archivo);
+            zip.putNextEntry(new ZipEntry(ruta + "/" +archivo.getName()));
+            while((leido = entrada.read(buffer)) > 0){
+                zip.write(buffer,0, leido);
+                
+            }
+            
+        }
+    }
+    
+    public static void agregarCarpeta(String ruta, String carpeta, ZipOutputStream zip) throws Exception{
+        File directorio = new File(carpeta);
+        for(String nombreArchivo: directorio.list()){
+            if(ruta.equals("")){
+                agregarArchivo(directorio.getName(), carpeta + "/" + nombreArchivo, zip);
+            }else{
+                agregarArchivo(ruta + "/" + directorio.getName(), carpeta + "/" + nombreArchivo, zip);
+            }
+            
+        }
+        
+    }
+    
+    public static void comprimir(String archivo, String archivoZIP) throws Exception{
+        ZipOutputStream zip = new ZipOutputStream(new FileOutputStream(archivoZIP));
+        agregarCarpeta("",archivo,zip);
+        zip.flush();
+        zip.close();
+        
+    }
 
     public static void subirArchivoDeCliente(ServerSocket s) {
         try {
@@ -66,6 +118,108 @@ public class ServidorPrac1 {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+    
+    public static File newFile(File destinationDir, ZipEntry zipEntry) throws IOException {
+        File destFile = new File(destinationDir, zipEntry.getName());
+
+        String destDirPath = destinationDir.getCanonicalPath();
+        String destFilePath = destFile.getCanonicalPath();
+
+        if (!destFilePath.startsWith(destDirPath + File.separator)) {
+            throw new IOException("Entry is outside of the target dir: " + zipEntry.getName());
+        }
+
+        return destFile;
+    }
+    
+    public static void subirCarpetaDeCliente(ServerSocket s){
+        try {
+            
+            s.setReuseAddress(true);
+            System.out.println("Servidor iniciado esperando por archivos..");
+            File f = new File("");
+            String ruta = f.getAbsolutePath();
+            String carpeta = "RepositorioServidor";
+            String ruta_archivos = ruta + "\\" + carpeta + "\\";
+            System.out.println("ruta:" + ruta_archivos);
+            File f2 = new File(ruta_archivos);
+            f2.mkdirs();
+            f2.setWritable(true);
+            for (;;) {
+                Socket cl = s.accept();
+                System.out.println("Cliente conectado desde " + cl.getInetAddress() + ":" + cl.getPort());
+                DataInputStream dis = new DataInputStream(cl.getInputStream());
+                String nombre = dis.readUTF();
+                long tam = dis.readLong();
+                System.out.println("Comienza descarga del archivo " + nombre + " de " + tam + " bytes\n\n");
+                DataOutputStream dos = new DataOutputStream(new FileOutputStream(ruta_archivos + nombre));
+                long recibidos = 0;
+                int l = 0, porcentaje = 0;
+                while (recibidos < tam) {
+                    byte[] b = new byte[1500];
+                    l = dis.read(b);
+                    System.out.println("leidos: " + l);
+                    dos.write(b, 0, l);
+                    dos.flush();
+                    recibidos = recibidos + l;
+                    porcentaje = (int) ((recibidos * 100) / tam);
+                    System.out.print("\rRecibido el " + porcentaje + " % del archivo");
+                }
+                System.out.println("Archivo recibido..");
+                dos.close();
+                dis.close();
+                cl.close();
+
+                //En esta seccion descomprimiremos el archivo zip
+                String fileZip = ruta_archivos + nombre;
+
+                //En las siguientes lineas crearemos la ruta directorio donde se guardara nuestro archivo zip 
+                String destination = ruta_archivos/* + nombre.substring(0, nombre.indexOf(".zip"))*/;
+
+                File destDir = new File(destination);
+                byte[] buffer = new byte[1024];
+                ZipInputStream zis = new ZipInputStream(new FileInputStream(fileZip));
+                ZipEntry zipEntry = zis.getNextEntry();
+
+                while (zipEntry != null) {
+                    File newFile = newFile(destDir, zipEntry);
+                    if (zipEntry.isDirectory()) {
+                        if (!newFile.isDirectory() && !newFile.mkdirs()) {
+                            throw new IOException("Failed to create directory " + newFile);
+                        }
+                    } else {
+                        // fix for Windows-created archives
+                        File parent = newFile.getParentFile();
+                        if (!parent.isDirectory() && !parent.mkdirs()) {
+                            throw new IOException("Failed to create directory " + parent);
+                        }
+
+                        // write file content
+                        FileOutputStream fos = new FileOutputStream(newFile);
+                        int len;
+                        while ((len = zis.read(buffer)) > 0) {
+                            fos.write(buffer, 0, len);
+                        }
+                        fos.close();
+                    }
+                    zipEntry = zis.getNextEntry();
+
+                }
+                zis.closeEntry();
+                zis.close();
+                
+                File borra = new File(ruta_archivos + nombre);
+                borra.delete();
+                
+                return;
+
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
     }
 
     public static void consultaRepoServidor(String carpeta, ServerSocket s) {
@@ -151,6 +305,166 @@ public class ServidorPrac1 {
         }
 
     }
+    
+    public static void descargaArchivosServidor(ServerSocket s){
+        try{
+            String op = "";
+            do{
+               //enviamos al cliente la lista de todos los archivos que hay en el repo remoto
+               consultaRepoServidor("RepositorioServidor",s);
+               
+               // obtenemos el numero de archivo que desea descargar el cliente
+               Socket cl = s.accept();
+               BufferedReader br1 = new BufferedReader(new InputStreamReader(cl.getInputStream(), "ISO-8859-1"));
+               String archivoE = br1.readLine();
+               br1.close();
+               cl.close();
+               
+                System.out.println("el numero recibido fue:" +archivoE);
+               // obtenemos una referencia de tipo file al archivo que se desea descargar
+               File f = new File("");
+               String ruta = f.getAbsolutePath();
+               String rutaRepoLocal = ruta + "\\" + "RepositorioServidor" + "\\";
+               int option = Integer.parseInt(archivoE);
+                System.out.println("La opcion para la descarga fue" +option);
+               
+               File folder = new File(rutaRepoLocal);
+                ArrayList<String> archivos = new ArrayList<String>();
+                for (File fileEntry : folder.listFiles()) {
+                    archivos.add(fileEntry.getName());
+                }
+               File archivoDescargar = new File(rutaRepoLocal + (archivos.get(option)));
+               
+               //Nuestro servidor se convertira momentaneamente en un cliente que le enviara datos a nuestro cliente
+               int pto = 8001;
+               String dir = "127.0.0.1";
+               Socket c2 = new Socket(dir, pto);
+               System.out.println("Conexion con cliente establecido, comenzando a mandar el archivo");
+               
+               String nombre = archivoDescargar.getName();
+               String path = archivoDescargar.getAbsolutePath();
+               long tam = archivoDescargar.length();
+               DataOutputStream dos = new DataOutputStream(c2.getOutputStream());
+               DataInputStream dis = new DataInputStream(new FileInputStream(path));
+               
+               dos.writeUTF(nombre);
+                dos.flush();
+                dos.writeLong(tam);
+                dos.flush();
+                long enviados = 0;
+                int l = 0, porcentaje = 0;
+            
+            while (enviados < tam) {
+                    byte[] b = new byte[1500];
+                    l = dis.read(b);
+                    System.out.println("enviados: " + l);
+                    dos.write(b, 0, l);
+                    dos.flush();
+                    enviados = enviados + l;
+                    porcentaje = (int) ((enviados * 100) / tam);
+                    System.out.print("\rEnviado el " + porcentaje + " % del archivo");
+                }//while
+                System.out.println("\nArchivo enviado..");
+                dis.close();
+                dos.close();
+                c2.close();
+               
+                
+            }while(op.compareToIgnoreCase("s")== 0);
+            
+        
+        }catch(Exception e){
+            
+        }
+        
+    }
+    
+    public static void descargaCarpetaServidor(ServerSocket s){
+        try{
+            String op = "";
+            do{
+               //enviamos al cliente la lista de todos los archivos que hay en el repo remoto
+               consultaRepoServidor("RepositorioServidor",s);
+               
+               // obtenemos el numero de directorio que desea descargar el cliente
+               Socket cl = s.accept();
+               BufferedReader br1 = new BufferedReader(new InputStreamReader(cl.getInputStream(), "ISO-8859-1"));
+               String archivoE = br1.readLine();
+               br1.close();
+               cl.close();
+               
+               //System.out.println("el numero recibido fue:" +archivoE);
+               
+               File f = new File("");
+               String ruta = f.getAbsolutePath();
+               String rutaRepoLocal = ruta + "\\" + "RepositorioServidor" + "\\";
+               int option = Integer.parseInt(archivoE);
+               
+               File folder = new File(rutaRepoLocal);
+                ArrayList<String> archivos = new ArrayList<String>();
+                for (File fileEntry : folder.listFiles()) {
+                    archivos.add(fileEntry.getName());
+                }
+               File archivoDescargar = new File(rutaRepoLocal + (archivos.get(option)));
+               
+              //Nuestro servidor se convertira momentaneamente en un cliente que le enviara datos a nuestro cliente
+              int pto = 8001;
+               String dir = "127.0.0.1";
+               Socket c2 = new Socket(dir, pto);
+               System.out.println("Conexion con cliente establecido, comenzando a mandar el directorio");
+               
+               String destino = "";
+               String carPadre ="";
+               
+               destino = archivoDescargar.getAbsolutePath();
+               destino = destino.replaceAll("\\\\","\\\\\\\\");
+               carPadre = destino;
+               destino += ".zip";
+               
+               comprimir(carPadre, destino);
+               
+               //Para este momento ya se creo el archivo zip cuya ruta esta en la variable destino
+                f = new File(destino);
+                
+                String nombre = f.getName();
+                String path = f.getAbsolutePath();
+                long tam = f.length();
+                System.out.println("Preparandose pare enviar archivo " + path + " de " + tam + " bytes\n\n");
+                DataOutputStream dos = new DataOutputStream(c2.getOutputStream());
+                DataInputStream dis = new DataInputStream(new FileInputStream(path));
+                dos.writeUTF(nombre);
+                dos.flush();
+                dos.writeLong(tam);
+                dos.flush();
+                long enviados = 0;
+                int l = 0, porcentaje = 0;
+                while (enviados < tam) {
+                    byte[] b = new byte[1500];
+                    l = dis.read(b);
+                    System.out.println("enviados: " + l);
+                    dos.write(b, 0, l);
+                    dos.flush();
+                    enviados = enviados + l;
+                    porcentaje = (int) ((enviados * 100) / tam);
+                    System.out.print("\rEnviado el " + porcentaje + " % del archivo");
+                }//while
+                System.out.println("\nArchivo enviado..");
+                dis.close();
+                dos.close();
+                c2.close();
+            
+            //borramos el archivo .zip que generamos para enviar al servidor
+            f.delete();
+              
+
+            }while(op.compareToIgnoreCase("s")== 0);
+            
+        
+        }catch(Exception e){
+            
+        }
+        
+    }
 
     public static void main(String[] args) {
         try {
@@ -183,9 +497,21 @@ public class ServidorPrac1 {
                         subirArchivoDeCliente(s1);
                         //System.out.println("Archivo subido con exito");
                         break;
+                    case "4":
+                        //Este sera para descargar archivos del repo remoto
+                        descargaArchivosServidor(s1);
+                        break;
+                    case "5":
+                        //Este sera para descargar carpetas del repo remoto
+                        descargaCarpetaServidor(s1);
+                        break;
                     case "6":
                         eliminarRepoServidor("RepositorioServidor", s1);
                         //System.out.println("Archivo subido con exito");
+                        break;
+                        
+                    case "31":
+                        subirCarpetaDeCliente(s1);
                         break;
 
                     default:
