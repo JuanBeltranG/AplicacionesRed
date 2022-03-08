@@ -4,13 +4,17 @@ import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import static practica1.ClientePrac1.eliminarDirectorios;
 
 
@@ -136,7 +140,10 @@ public class ServidorPrac1 {
     public static void subirCarpetaDeCliente(ServerSocket s){
         try {
             
+<<<<<<< HEAD
             s.setReuseAddress(true);
+=======
+>>>>>>> menuservidor
             System.out.println("Servidor iniciado esperando por archivos..");
             File f = new File("");
             String ruta = f.getAbsolutePath();
@@ -212,7 +219,10 @@ public class ServidorPrac1 {
                 File borra = new File(ruta_archivos + nombre);
                 borra.delete();
                 
+<<<<<<< HEAD
                 return;
+=======
+>>>>>>> menuservidor
 
             }
 
@@ -509,9 +519,15 @@ public class ServidorPrac1 {
                         eliminarRepoServidor("RepositorioServidor", s1);
                         //System.out.println("Archivo subido con exito");
                         break;
+<<<<<<< HEAD
                         
                     case "31":
                         subirCarpetaDeCliente(s1);
+=======
+                    case "31":
+                        subirCarpetaDeCliente(s1);
+                        //System.out.println("Carpeta subida con exito");
+>>>>>>> menuservidor
                         break;
 
                     default:

@@ -14,7 +14,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.zip.ZipEntry;
+<<<<<<< HEAD
 import java.util.zip.ZipInputStream;
+=======
+>>>>>>> menuservidor
 import java.util.zip.ZipOutputStream;
 import javax.swing.JFileChooser;
 
@@ -513,6 +516,44 @@ public class ClientePrac1 {
             e.printStackTrace();
         }
     }
+    
+    
+    public static void menuSubirArchivos() throws IOException{
+        
+        int option = 0;
+        while(option != 3){
+            System.out.println("");
+            
+            System.out.println("-----------------------------------------------------------------------------------");
+            System.out.println("1.- Subir archivos");
+            System.out.println("2.- Subir carpetas");
+            System.out.println("3.- Salir al menu principal");
+            System.out.println("Introduce el numero de la opcion a realizar: \n");
+            
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            String op = reader.readLine();
+            option = Integer.parseInt(op);
+            
+            switch (option) {
+                case 1:
+                    sMenuServidor(3);
+                    subirArchivosCarpetas();
+                    break;
+                case 2:
+                    sMenuServidor(31);
+                    subirCarpetas();
+                    break;
+                case 3:
+                    
+                    break;
+                default:
+                    System.out.println("Operación no reconocida, por favor intentelo de nuevo");
+                    break;
+            }
+            
+        }
+        
+    }
 
     public static void subirArchivosCarpetas() {
         try {
@@ -622,6 +663,10 @@ public class ClientePrac1 {
         
     }
     
+<<<<<<< HEAD
+=======
+    
+>>>>>>> menuservidor
     public static void comprimir(String archivo, String archivoZIP) throws Exception{
         ZipOutputStream zip = new ZipOutputStream(new FileOutputStream(archivoZIP));
         agregarCarpeta("",archivo,zip);
@@ -635,6 +680,7 @@ public class ClientePrac1 {
             int pto = 8000;
             String dir = "127.0.0.1";
             Socket cl = new Socket(dir, pto);
+<<<<<<< HEAD
             
              //PARAMETROS DE COMUNICACION
             cl.setTcpNoDelay(algoritmoNagle);// este es para activar o desactivar el algoritmo de nagle
@@ -644,6 +690,8 @@ public class ClientePrac1 {
             cl.setKeepAlive(keepAlive);
             cl.setSoTimeout(tempLectura);
             
+=======
+>>>>>>> menuservidor
             System.out.println("Conexion con servidor establecida.. lanzando FileChooser..");
 
             JFileChooser chooser;
@@ -714,6 +762,7 @@ public class ClientePrac1 {
             e.printStackTrace();
         }
     }
+<<<<<<< HEAD
             
     public static void menuSubirArchivos() throws IOException{
         int option = 0;
@@ -749,6 +798,8 @@ public class ClientePrac1 {
             }
         }
     }
+=======
+>>>>>>> menuservidor
 
     public static void sMenuServidor(int opcionM) {
         try {
@@ -937,6 +988,10 @@ public class ClientePrac1 {
                     consultaRepoServidor();
                     break;
                 case 3:
+<<<<<<< HEAD
+=======
+                    sMenuServidor(option);
+>>>>>>> menuservidor
                     menuSubirArchivos();
                     break;
                 case 4:
