@@ -1,0 +1,15 @@
+cabeza
+pierna
+ojo
+dedo
+mano
+pie
+uña
+oreja
+labio
+nari
+codo
+pelo
+piel
+nalga
+ceja

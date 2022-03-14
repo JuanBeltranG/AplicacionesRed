@@ -340,7 +340,6 @@ public class ClientePrac1 {
     }
 
     public static void consultaRepoLocal(String carpeta) {
-
         //Con el sig segmento de codigo obtenemos la ruta a nuestra carpeta que contiene el repo local
         File f = new File("");
         String ruta = f.getAbsolutePath();

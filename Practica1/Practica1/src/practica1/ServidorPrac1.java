@@ -234,7 +234,8 @@ public class ServidorPrac1 {
         try {
             Socket c1 = s.accept();
             //System.out.println("Cliente conectado desde " + c1.getInetAddress() + ":" + c1.getPort());
-            PrintWriter pw = new PrintWriter(new OutputStreamWriter(c1.getOutputStream(), "ISO-8859-1"));
+            PrintWriter pw = new PrintWriter(new OutputStreamWriter(c1.getOutputStream()
+            , "ISO-8859-1"));
             for (File fileEntry : folder.listFiles()) {
                 if (fileEntry.isDirectory()) {
                     mensaje = "Directorio:" + fileEntry.getName();
