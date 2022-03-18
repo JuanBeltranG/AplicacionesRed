@@ -31,9 +31,19 @@ import java.util.Random;
 public class ServidorSD {
     
     
+    public static int randomDificultad(){
+        int min_val = 1;
+        int max_val = 2;
+        
+        Random ran = new Random();
+        int x = ran.nextInt(max_val) + min_val;
+        
+        return x;
+
+    }
+    
     public static String seleccionaPalabrasRandom(){
-        
-        
+
         int min_val = 1;
         int max_val = 5;
         
@@ -45,7 +55,6 @@ public class ServidorSD {
         rutaPlabras += ".txt";
         
         return rutaPlabras;
-        
     }
     
     public static void ImprimirMatriz(String[][] Matriz) {
@@ -259,10 +268,7 @@ public class ServidorSD {
 
     }
     
-    
-    
-    
-    
+
     public static void main(String args[]){
         
         int sizeMatriz = 16;
@@ -274,13 +280,14 @@ public class ServidorSD {
         double tiempoRecord = Double.MAX_VALUE;
         double peorTiempo = 0;
         
-        /*long inicio = System.currentTimeMillis();
-        long fin = System.currentTimeMillis();
-        double tiempo = (double) ((fin - inicio)/1000);    
-        System.out.println(tiempo +" segundos");*/
-        
         long inicio = 0;
         long fin = 0;
+        
+        
+        //DIFICULTAD
+        // 1 - FACIL
+        // 2 - DIFICIL 
+        
         
         
         try{
@@ -290,6 +297,9 @@ public class ServidorSD {
             System.out.println("Servidor iniciado, esperando cliente para inicializar un juego..");
             
             while(true){
+                
+                //int dificultad = 
+                
                 DatagramPacket p = new DatagramPacket(new byte[65535],65535);
                 s.receive(p);
                 
@@ -337,8 +347,7 @@ public class ServidorSD {
                     // dd = diagonal a la derecha
                     
                     GenerarMatriz(MatrizE, Matriz, posiciones, contentList, respuestas);
-                    
-                    
+                        
                     ObjetoInicioJuego o1 = new ObjetoInicioJuego(Matriz,contentList,"Activo",0);
                     ByteArrayOutputStream baos= new ByteArrayOutputStream();
                     ObjectOutputStream oos = new ObjectOutputStream(baos);
@@ -356,16 +365,13 @@ public class ServidorSD {
                         String currKey = (String) llaves.nextElement();
                       System.out.println("Palabla:  " + currKey +"|| Coordenadas:  "+ respuestas.get(currKey));
                     }
-                    
-                        
+            
                 }
                 
                 //////////////////////////////////////////////////////////////////
                 //Si se alzanza esta seccion significa que el juego ya esta iniciado
                 if(o.getEstado().equals("Activo")){
-                    
-                    
-                    
+
                     String palabraIntento = o.getIntentoPalabra();
                     String coordenada1 = o.getCoo1();
                     String coordenada2 = o.getCoo2();
@@ -425,10 +431,7 @@ public class ServidorSD {
                                     respCliente = new ObjetoInicioJuego(contentList,estadoJuego,numAciertos,estadoIntento,tiempoRecord, tiempo, peorTiempo);
                                     
                                     //ACORDARSE DE REINICIAR LAS VARIABLES
-                                    
-                                    
-                                    
-                                    
+                                        
                                }
                                 
                             }
@@ -444,7 +447,6 @@ public class ServidorSD {
                     }
                     
                     //Procedemos a devolver el objeto al jugador
-                   
                     ByteArrayOutputStream baos= new ByteArrayOutputStream();
                     ObjectOutputStream oos = new ObjectOutputStream(baos);
                     oos.writeObject(respCliente);
@@ -454,24 +456,10 @@ public class ServidorSD {
                     s.send(p1);
                     System.out.println("Respuesta del servidor enviada"); 
                     System.out.println("-------------------------------- \n");
-                    
-                   
-                    
+                           
                 }
-                
-
-                
-                
+         
             }
-            
-            
-            
-            
-            
-            
-            
-            
-            
         }catch(Exception e){
             e.printStackTrace();
             

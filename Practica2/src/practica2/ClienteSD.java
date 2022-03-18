@@ -37,15 +37,19 @@ public class ClienteSD {
 
         int pto = 8888;
         String host = "127.0.0.1";
+        
+        System.out.println("Se recomienda utilizar el puerto 8888 y la direccion Ip 127.0.0.1");
 
-        /*System.out.println("Introduce el puerto : ");
+        System.out.println("Introduce el puerto : ");
         BufferedReader puertoReader = new BufferedReader(new InputStreamReader(System.in));
         pto = Integer.parseInt(puertoReader.readLine());
         
         
         System.out.println("Introduce la direccion IP : ");
         BufferedReader ipReader = new BufferedReader(new InputStreamReader(System.in));
-        host = ipReader.readLine();*/
+        host = ipReader.readLine();
+        
+        
         //El estadoJuego tendra 2 posibles valores: activo y finalizado
         String estadoJuego = "";
         String[][] sopaLetras;
@@ -87,6 +91,12 @@ public class ClienteSD {
                 sopaLetras = o1.getMatrizInicial();
                 palabras = o1.getPalabras();
                 palabrasEncontradas = o1.getPalabrasEncontradas();
+                
+                System.out.println("Sopa de letras");
+                System.out.println("-------------------------------");
+                System.out.println("Concepto: partes del cuerpo");
+                System.out.println("-------------------------------");
+                System.out.println("\n");
 
                 ImprimirMatriz(sopaLetras);
                 System.out.println("Las palabras que debes encontrar son las siguientes: ");
@@ -130,8 +140,7 @@ public class ClienteSD {
                     ObjetoInicioJuego resp = new ObjetoInicioJuego("Activo", palabrasEncontradas, palabra, coordenada1, coordenada2);
 
                     //Comenzamos a realizar la conexion con el server para amndar la respuesta
-                    
-                    
+
                     //InetAddress dst = InetAddress.getByName(host);
                     //DatagramSocket cl = new DatagramSocket();
 
