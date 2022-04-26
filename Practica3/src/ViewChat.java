@@ -28,9 +28,11 @@ import javax.swing.*;
  */
 public class ViewChat {
 
+    File f = new File("");
+    String ruta = f.getAbsolutePath();
     String path, tmp_u = "", tmp_m = "";
     int bandera;
-    String mensaje_inicio = "", mensaje_medio = "", mensaje_final = "";
+
     JPanel panel;
     JPanel panel3;
     JPanel panel4;
@@ -51,6 +53,27 @@ public class ViewChat {
     Color Color;
     MulticastSocket m;
     int counter = 0;
+    String mensaje_inicio = "<head><base href=\"file:" + ruta + "\\\">\n"
+            + "<style>#usuarios {"
+            + "font-family: Arial, Helvetica, sans-serif;"
+            + "border-collapse: collapse;"
+            + "width: 100%;"
+            + "} #usuarios td, #usuarios th {"
+            + "border: 0px solid #ddd;"
+            + " padding: 8px;"
+            + "}#usuarios tr:nth-child(even){background-color: #f2f2f2;}"
+            + "#usuarios tr:hover {background-color: #ddd;}"
+            + "#usuarios th {"
+            + " padding-top: 12px;"
+            + "padding-bottom: 12px;"
+            + "text-align: left;"
+            + "background-color: #04AA6D;"
+            + "color: white;}"
+            + "</style>\n"
+            + "</head>\n"
+            + "<doby>\n<table id=\"usuarios\">\n";
+    String mensaje_final = "</table></body>\n";
+    String mensaje_medio = "";
 
     public ViewChat() {
         initComponent();
@@ -75,9 +98,9 @@ public class ViewChat {
         public SendMulticast(MulticastSocket m, String message) {
             this.socket = m;
             try {
-                String dir6 = "ff3e::1234:1";
+                String dir = "230.1.1.1";
                 int pto = 1234;
-                InetAddress gpo = InetAddress.getByName(dir6);
+                InetAddress gpo = InetAddress.getByName(dir);
                 byte[] b = message.getBytes();
                 DatagramPacket p = new DatagramPacket(b, b.length, gpo, pto);
                 socket.send(p);
@@ -108,8 +131,11 @@ public class ViewChat {
                     DatagramPacket p = new DatagramPacket(new byte[65535], 65535);
                     System.out.println("Listo para recibir mensajes...");
                     socket.receive(p);
-                    msj = msj + new String(p.getData(), 0, p.getLength());
-                    messageView.setText(msj);
+                    msj = new String(p.getData(), 0, p.getLength());
+                    mensaje_medio = mensaje_medio+ "<tr>\n"
+                            + "<td> Dice:"  + msj +"</td>\n"
+                            + "</tr>";
+                    messageView.setText(mensaje_inicio + mensaje_medio + mensaje_final);
                     System.out.println("Mensaje recibido: ");
                     System.out.println(msj);
                 } //for
@@ -130,8 +156,8 @@ public class ViewChat {
             m = new MulticastSocket(pto);
             m.setReuseAddress(true);
             m.setTimeToLive(255);
-            String dir6 = "ff3e::1234:1";
-            InetAddress gpo = InetAddress.getByName(dir6);
+            String dir = "230.1.1.1";
+            InetAddress gpo = InetAddress.getByName(dir);
             SocketAddress dirm;
             try {
                 dirm = new InetSocketAddress(gpo, pto);
@@ -151,30 +177,8 @@ public class ViewChat {
 
     private void initComponent() {
         //html for emojis
-        File f = new File("");
-        String ruta = f.getAbsolutePath();
-        mensaje_inicio = "<head><base href=\"file:" + ruta + "\\\">\n"
-                + "<style>#usuarios {"
-                + "font-family: Arial, Helvetica, sans-serif;"
-                + "border-collapse: collapse;"
-                + "width: 100%;"
-                + "} #usuarios td, #usuarios th {"
-                + "border: 0px solid #ddd;"
-                + " padding: 8px;"
-                + "}#usuarios tr:nth-child(even){background-color: #f2f2f2;}"
-                + "#usuarios tr:hover {background-color: #ddd;}"
-                + "#usuarios th {"
-                + " padding-top: 12px;"
-                + "padding-bottom: 12px;"
-                + "text-align: left;"
-                + "background-color: #04AA6D;"
-                + "color: white;}"
-                + "</style>\n"
-                + "</head>\n"
-                + "<doby>\n<table id=\"usuarios\">\n";
-        mensaje_final = "</table></body>\n";
-        // Making frame
 
+        // Making frame
         frame = new JFrame("Chat Frame");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(500, 700);
@@ -224,7 +228,7 @@ public class ViewChat {
         //Setting Button 'Files'
         fileB = new JButton("Add File");
         //Label for name chat
-        nameChat = new JLabel("Chat 1");
+        nameChat = new JLabel("Chat 2");
         //Setting Button 'Emoji'
         Emoji1 = new JLabel("E1");
         Emoji1.setSize(new Dimension(80, 80));
@@ -304,18 +308,12 @@ public class ViewChat {
     }
 
     private void sendBActionPerformed(java.awt.event.ActionEvent evt) {
-        mensaje_medio = "<tr>\n"
+        mensaje_medio = mensaje_medio+ "<tr>\n"
                 + "<td>" + nameChat.getText() + " dice: </td>\n"
                 + "<td>" + writingArea.getText() + "</td>\n"
                 + "</tr>";
-        if (counter == 0) {
-            counter++;
-            SendMulticast se = new SendMulticast(m, mensaje_inicio + mensaje_medio);
-        } else {
-            SendMulticast se = new SendMulticast(m, mensaje_medio);
-        }
-
-        //messageView.setText(mensaje_inicio + mensaje_medio + mensaje_final);
+        
+        SendMulticast se = new SendMulticast(m, "<msj><" + nameChat.getText() + ">" + writingArea.getText());
         //System.out.println(mensaje_inicio + mensaje_medio + mensaje_final);
         writingArea.setText("");
     }
